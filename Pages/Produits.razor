@@ -1,0 +1,86 @@
+@page "/produits"
+@using BlazorWebAssemblyApp.ViewModels
+@inject ProduitsViewModel ViewModel
+@implements IDisposable
+
+<PageTitle>Produits</PageTitle>
+
+<h1>Liste des Produits</h1>
+
+@if (ViewModel.IsLoading && !ViewModel.Produits.Any())
+{
+    <p><em>Chargement des produits...</em></p>
+}
+else if (!ViewModel.Produits.Any())
+{
+    <p>Aucun produit trouvé.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nom</th>
+                <th>Type</th>
+                <th>Marque</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var produit in ViewModel.Produits)
+            {
+                <tr>
+                    <td>@produit.Id</td>
+                    <td>@produit.Nom</td>
+                    <td>@produit.Type</td>
+                    <td>@produit.Marque</td>
+                    <td>
+                        <button class="btn btn-primary" @onclick="() => VoirDetails(produit.Id)">Détails</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (ViewModel.ProduitSelectionne != null)
+{
+    <hr />
+    <h2>Détails du produit sélectionné</h2>
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">@ViewModel.ProduitSelectionne.Nom</h5>
+            <h6 class="card-subtitle mb-2 text-muted">@ViewModel.ProduitSelectionne.Marque - @ViewModel.ProduitSelectionne.Type</h6>
+            <p class="card-text">
+                <strong>Description :</strong> @ViewModel.ProduitSelectionne.Description <br />
+                <strong>Stock :</strong> @ViewModel.ProduitSelectionne.Stock <br />
+                <strong>En Réapprovisionnement :</strong> @(ViewModel.ProduitSelectionne.EnReappro ? "Oui" : "Non") <br />
+            </p>
+            <button class="btn btn-secondary" @onclick="FermerDetails">Fermer</button>
+        </div>
+    </div>
+}
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        ViewModel.OnStateChange += StateHasChanged;
+        await ViewModel.ChargerProduitsAsync();
+    }
+
+    private async Task VoirDetails(int id)
+    {
+        await ViewModel.ChargerDetailsProduitAsync(id);
+    }
+
+    private void FermerDetails()
+    {
+        ViewModel.ReinitialiserSelection();
+    }
+
+    public void Dispose()
+    {
+        ViewModel.OnStateChange -= StateHasChanged;
+    }
+}

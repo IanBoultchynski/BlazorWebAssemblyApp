@@ -1,0 +1,53 @@
+@page "/marques"
+@using BlazorWebAssemblyApp.ViewModels
+@inject MarquesViewModel ViewModel
+@implements IDisposable
+
+<PageTitle>Marques</PageTitle>
+
+<h1>Liste des Marques</h1>
+
+@if (ViewModel.IsLoading)
+{
+    <p><em>Chargement des marques...</em></p>
+}
+else if (!ViewModel.Marques.Any())
+{
+    <p>Aucune marque trouvée.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nom</th>
+                <th>Nombre de produits</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var marque in ViewModel.Marques)
+            {
+                <tr>
+                    <td>@marque.Id</td>
+                    <td>@marque.Nom</td>
+                    <td>@marque.NbProduits</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        ViewModel.OnStateChange += StateHasChanged;
+        await ViewModel.ChargerMarquesAsync();
+    }
+
+    public void Dispose()
+    {
+        ViewModel.OnStateChange -= StateHasChanged;
+    }
+}
+

@@ -12,7 +12,8 @@ namespace BlazorWebAssemblyApp
             builder.RootComponents.Add<HeadOutlet>("head::after");
 
             // Configuration du HttpClient pour appeler l'API
-            builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://localhost:7160/") });
+            // Configuration du HttpClient pour appeler l'API
+            builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://localhost:5171/") });
 
             // Enregistrement des ViewModels
             builder.Services.AddScoped<BlazorWebAssemblyApp.ViewModels.ProduitsViewModel>();

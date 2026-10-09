@@ -1,11 +1,68 @@
 @page "/produits"
 @using BlazorWebAssemblyApp.ViewModels
+@using BlazorWebAssemblyApp.Models
 @inject ProduitsViewModel ViewModel
 @implements IDisposable
 
 <PageTitle>Produits</PageTitle>
 
 <h1>Liste des Produits</h1>
+
+<button class="btn btn-success mb-3" @onclick="AfficherFormulaireAjout">Ajouter un produit</button>
+
+@if (_afficherFormulaire)
+{
+    <div class="card mb-4">
+        <div class="card-header">@(_estModification ? "Modifier le Produit" : "Nouveau Produit")</div>
+        <div class="card-body">
+            @if (!string.IsNullOrEmpty(_messageErreur))
+            {
+                <div class="alert alert-danger">@_messageErreur</div>
+            }
+
+            <EditForm Model="@_formulaireProduit" OnValidSubmit="EnregistrerProduit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="mb-3">
+                    <label>Nom :</label>
+                    <InputText class="form-control" @bind-Value="_formulaireProduit.NomProduit" />
+                </div>
+                <div class="mb-3">
+                    <label>Description :</label>
+                    <InputText class="form-control" @bind-Value="_formulaireProduit.Description" />
+                </div>
+                <div class="row mb-3">
+                    <div class="col">
+                        <label>ID Type Produit :</label>
+                        <InputNumber class="form-control" @bind-Value="_formulaireProduit.IdTypeProduit" />
+                    </div>
+                    <div class="col">
+                        <label>ID Marque :</label>
+                        <InputNumber class="form-control" @bind-Value="_formulaireProduit.IdMarque" />
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col">
+                        <label>Stock Réel :</label>
+                        <InputNumber class="form-control" @bind-Value="_formulaireProduit.StockReel" />
+                    </div>
+                    <div class="col">
+                        <label>Stock Min :</label>
+                        <InputNumber class="form-control" @bind-Value="_formulaireProduit.StockMin" />
+                    </div>
+                    <div class="col">
+                        <label>Stock Max :</label>
+                        <InputNumber class="form-control" @bind-Value="_formulaireProduit.StockMax" />
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Enregistrer</button>
+                <button type="button" class="btn btn-secondary" @onclick="FermerFormulaire">Annuler</button>
+            </EditForm>
+        </div>
+    </div>
+}
 
 @if (ViewModel.IsLoading && !ViewModel.Produits.Any())
 {
@@ -36,7 +93,9 @@ else
                     <td>@produit.Type</td>
                     <td>@produit.Marque</td>
                     <td>
-                        <button class="btn btn-primary" @onclick="() => VoirDetails(produit.Id)">Détails</button>
+                        <button class="btn btn-info btn-sm" @onclick="() => VoirDetails(produit.Id)">Détails</button>
+                        <button class="btn btn-warning btn-sm mx-1" @onclick="() => EditerProduit(produit.Id)">Modifier</button>
+                        <button class="btn btn-danger btn-sm" @onclick="() => SupprimerProduit(produit.Id)">Supprimer</button>
                     </td>
                 </tr>
             }
@@ -54,7 +113,7 @@ else
             <h6 class="card-subtitle mb-2 text-muted">@ViewModel.ProduitSelectionne.Marque - @ViewModel.ProduitSelectionne.Type</h6>
             <p class="card-text">
                 <strong>Description :</strong> @ViewModel.ProduitSelectionne.Description <br />
-                <strong>Stock :</strong> @ViewModel.ProduitSelectionne.Stock <br />
+                <strong>Stock Réel:</strong> @ViewModel.ProduitSelectionne.StockReel <br />
                 <strong>En Réapprovisionnement :</strong> @(ViewModel.ProduitSelectionne.EnReappro ? "Oui" : "Non") <br />
             </p>
             <button class="btn btn-secondary" @onclick="FermerDetails">Fermer</button>
@@ -63,6 +122,11 @@ else
 }
 
 @code {
+    private bool _afficherFormulaire = false;
+    private bool _estModification = false;
+    private string? _messageErreur = null;
+    private ProduitUpdateDto _formulaireProduit = new();
+
     protected override async Task OnInitializedAsync()
     {
         ViewModel.OnStateChange += StateHasChanged;
@@ -79,8 +143,79 @@ else
         ViewModel.ReinitialiserSelection();
     }
 
+    private void AfficherFormulaireAjout()
+    {
+        _formulaireProduit = new ProduitUpdateDto();
+        _messageErreur = null;
+        _estModification = false;
+        _afficherFormulaire = true;
+    }
+
+    private async Task EditerProduit(int id)
+    {
+        await ViewModel.ChargerDetailsProduitAsync(id);
+        if (ViewModel.ProduitSelectionne != null)
+        {
+            _formulaireProduit = new ProduitUpdateDto
+            {
+                IdProduit = ViewModel.ProduitSelectionne.Id,
+                NomProduit = ViewModel.ProduitSelectionne.Nom,
+                Description = ViewModel.ProduitSelectionne.Description,
+                IdTypeProduit = ViewModel.ProduitSelectionne.IdTypeProduit,
+                IdMarque = ViewModel.ProduitSelectionne.IdMarque,
+                StockReel = ViewModel.ProduitSelectionne.StockReel,
+                StockMin = ViewModel.ProduitSelectionne.StockMin,
+                StockMax = ViewModel.ProduitSelectionne.StockMax,
+                NomPhoto = ViewModel.ProduitSelectionne.Nomphoto,
+                UriPhoto = ViewModel.ProduitSelectionne.Uriphoto
+            };
+            _messageErreur = null;
+            _estModification = true;
+            _afficherFormulaire = true;
+        }
+    }
+
+    private async Task SupprimerProduit(int id)
+    {
+        if (await ViewModel.SupprimerProduitAsync(id))
+        {
+            // Succès
+        }
+    }
+
+    private void FermerFormulaire()
+    {
+        _afficherFormulaire = false;
+        _messageErreur = null;
+    }
+
+    private async Task EnregistrerProduit()
+    {
+        _messageErreur = null;
+        bool succes;
+        
+        if (_estModification)
+        {
+            succes = await ViewModel.ModifierProduitAsync(_formulaireProduit);
+        }
+        else
+        {
+            succes = await ViewModel.AjouterProduitAsync(_formulaireProduit);
+        }
+
+        if (succes)
+        {
+            _afficherFormulaire = false;
+        }
+        else
+        {
+            _messageErreur = "Une erreur est survenue lors de l'enregistrement. Vérifiez que l'ID Marque et Type Produit existent.";
+        }
+    }
+
     public void Dispose()
     {
         ViewModel.OnStateChange -= StateHasChanged;
     }
 }
+

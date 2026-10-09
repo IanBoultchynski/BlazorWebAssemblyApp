@@ -4,15 +4,35 @@
 
 <h1>Counter</h1>
 
-<p role="status">Current count: @currentCount</p>
+<p role="status">Note de Ian Boultchynski : @currentCount  / 20 .  @statut</p>
 
-<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+<button class="btn btn-primary" @onclick="IncrementCount">Ajoute HEIN</button>
 
 @code {
     private int currentCount = 0;
+    private string statut = "";
 
     private void IncrementCount()
     {
         currentCount++;
+        if(currentCount >= 2)
+        {
+            statut = "un peu + svp";
+        }
+
+        if(currentCount >= 20)
+        {
+            statut = "Merci ! ";
+        }
+        if(currentCount >= 25)
+        {
+            statut = "J'en demandais pas autant";
+        }
+
+        if(currentCount >= 30)
+        {
+            currentCount = 30; 
+            statut = "STOP !";
+        }
     }
 }

@@ -62,6 +62,86 @@ namespace BlazorWebAssemblyApp.ViewModels
             NotifyStateChanged();
         }
 
+        public async Task<bool> AjouterProduitAsync(ProduitCreateDto nouveauProduit)
+        {
+            IsLoading = true;
+            NotifyStateChanged();
+
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync("api/Produits", nouveauProduit);
+                if (response.IsSuccessStatusCode)
+                {
+                    await ChargerProduitsAsync();
+                    return true;
+                }
+                return false;
+            }
+            catch
+            {
+                return false;
+            }
+            finally
+            {
+                IsLoading = false;
+                NotifyStateChanged();
+            }
+        }
+
+        public async Task<bool> ModifierProduitAsync(ProduitUpdateDto produit)
+        {
+            IsLoading = true;
+            NotifyStateChanged();
+
+            try
+            {
+                var response = await _httpClient.PutAsJsonAsync($"api/Produits/{produit.IdProduit}", produit);
+                if (response.IsSuccessStatusCode)
+                {
+                    await ChargerProduitsAsync();
+                    return true;
+                }
+                return false;
+            }
+            catch
+            {
+                return false;
+            }
+            finally
+            {
+                IsLoading = false;
+                NotifyStateChanged();
+            }
+        }
+
+        public async Task<bool> SupprimerProduitAsync(int id)
+        {
+            IsLoading = true;
+            NotifyStateChanged();
+
+            try
+            {
+                var response = await _httpClient.DeleteAsync($"api/Produits/{id}");
+                if (response.IsSuccessStatusCode)
+                {
+                    await ChargerProduitsAsync();
+                    if (ProduitSelectionne?.Id == id) ReinitialiserSelection();
+                    return true;
+                }
+                return false;
+            }
+            catch
+            {
+                return false;
+            }
+            finally
+            {
+                IsLoading = false;
+                NotifyStateChanged();
+            }
+        }
+
         private void NotifyStateChanged() => OnStateChange?.Invoke();
     }
 }
+
